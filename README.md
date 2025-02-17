@@ -1,3 +1,20 @@
+## Prerequisites
+Windows 11 with WSL installed: Ensure you have WSL installed and a Linux distribution (e.g., Ubuntu) set up.
+
+Docker Desktop: Install Docker Desktop for Windows and ensure it is configured to use WSL 2.
+
+
+mkdir -p ~/gitlab-docker-project/{gitlab,gitlab-runner,nginx,postgresql}
+cd ~/gitlab-docker-project
+
+## Generate self-signed certificate
+As gitlab needs SSL to communicate and download gitlab repositories when you clone them in the docker/wsl
+
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+      -keyout ~/gitlab-docker-project/nginx/certs/gitlab.local.key \
+      -out ~/gitlab-docker-project/nginx/certs/gitlab.local.crt
+
+
 ## Start the Containers
 Run the following command in the gitlab-docker folder to start all the containers:
 
