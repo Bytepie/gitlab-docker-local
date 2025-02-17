@@ -4,8 +4,37 @@ Windows 11 with WSL installed: Ensure you have WSL installed and a Linux distrib
 Docker Desktop: Install Docker Desktop for Windows and ensure it is configured to use WSL 2.
 
 
-mkdir -p ~/gitlab-docker-project/{gitlab,gitlab-runner,nginx,postgresql}
-cd ~/gitlab-docker-project
+    mkdir -p ~/gitlab-docker-project/{gitlab,gitlab-runner,nginx,postgresql}
+    cd ~/gitlab-docker-project
+    mkdir -p {gitlab,gitlab-runner,nginx,postgresql}/{config,logs,data,certs}
+    mkdir -p nginx/conf.d
+
+
+### This will create below folder structure
+    gitlab-docker-project/
+    ├── gitlab/
+    │   ├── config/
+    │   ├── logs/
+    │   ├── data/
+    │   └── certs/
+    ├── gitlab-runner/
+    │   ├── config/
+    │   ├── logs/
+    │   ├── data/
+    │   └── certs/
+    ├── nginx/
+    │   ├── conf.d/
+    │   ├── config/
+    │   ├── logs/
+    │   ├── data/
+    │   └── certs/    
+    └── postgresql/
+        ├── config/
+        ├── logs/
+        ├── data/
+        └── certs/
+        
+
 
 ## Generate self-signed certificate
 As gitlab needs SSL to communicate and download gitlab repositories when you clone them in the docker/wsl
