@@ -63,3 +63,7 @@ Run the following command in the gitlab-docker folder to start all the container
             proxy_set_header X-Forwarded-Proto $scheme;
         }
     }
+
+## How to register Gitlab runner
+    docker exec -it gitlab-runner gitlab-runner register
+Also note that the config.toml file for the runner contains the required configuration for runner docker for the jobs in the same network as the main gitlab project
