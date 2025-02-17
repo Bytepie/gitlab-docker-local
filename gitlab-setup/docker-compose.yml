@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  postgresql:
+    image: postgres:14
+    container_name: postgresql
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./postgresql/data:/var/lib/postgresql/data
+    networks:
+      - gitlab-network
+
+  gitlab:
+    image: gitlab/gitlab-ee:latest
+    container_name: gitlab
+    hostname: ${GITLAB_HOSTNAME}
+    restart: always
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'https://${GITLAB_HOSTNAME}'
+        nginx['redirect_http_to_https'] = true
+        nginx['ssl_certificate'] = "/etc/gitlab/ssl/${GITLAB_HOSTNAME}.crt"
+        nginx['ssl_certificate_key'] = "/etc/gitlab/ssl/${GITLAB_HOSTNAME}.key"
+        gitlab_rails['gitlab_shell_ssh_port'] = 22
+        postgresql['enable'] = false
+        gitlab_rails['db_adapter'] = 'postgresql'
+        gitlab_rails['db_encoding'] = 'unicode'
+        gitlab_rails['db_host'] = '${POSTGRES_HOST}'
+        gitlab_rails['db_port'] = '${POSTGRES_PORT}'
+        gitlab_rails['db_database'] = '${POSTGRES_DB}'
+        gitlab_rails['db_username'] = '${POSTGRES_USER}'
+        gitlab_rails['db_password'] = '${POSTGRES_PASSWORD}'
+        gitlab_rails['initial_root_password'] = '123456-Aa'
+    ports:
+      - "${GITLAB_SSH_PORT}:22"
+    volumes:
+      - ./gitlab/config:/etc/gitlab
+      - ./gitlab/logs:/var/log/gitlab
+      - ./gitlab/data:/var/opt/gitlab
+      - ${SSL_CERT}:/etc/gitlab/ssl/${GITLAB_HOSTNAME}.crt
+      - ${SSL_KEY}:/etc/gitlab/ssl/${GITLAB_HOSTNAME}.key
+    depends_on:
+      - postgresql
+    networks:
+      - gitlab-network
+
+  gitlab-runner:
+    image: gitlab/gitlab-runner:latest
+    container_name: gitlab-runner
+    restart: always
+    depends_on:
+      - gitlab
+    volumes:
+      - ./gitlab-runner/config:/etc/gitlab-runner
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./nginx/certs/${GITLAB_HOSTNAME}.crt:/etc/gitlab-runner/certs/${GITLAB_HOSTNAME}.crt:ro
+    environment:
+      - CI_SERVER_URL=https://${GITLAB_HOSTNAME}
+      - REGISTRATION_TOKEN=${GITLAB_RUNNER_REGISTRATION_TOKEN}
+      - RUNNER_NAME=${GITLAB_RUNNER_NAME}
+      - RUNNER_EXECUTOR=docker
+      - DOCKER_IMAGE=alpine:latest
+      - TLS_CA_FILE=/etc/gitlab-runner/certs/${GITLAB_HOSTNAME}.crt
+    networks:
+      - gitlab-network
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    restart: always
+    ports:
+      - "${NGINX_HTTP_PORT}:80"
+      - "${NGINX_HTTPS_PORT}:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ${SSL_CERT}:/etc/nginx/certs/${GITLAB_HOSTNAME}.crt
+      - ${SSL_KEY}:/etc/nginx/certs/${GITLAB_HOSTNAME}.key
+      - ./nginx/logs:/var/log/nginx
+    networks:
+      - gitlab-network
+
+networks:
+  gitlab-network:
+    driver: bridge
